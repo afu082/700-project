@@ -18,6 +18,15 @@ def read_ies(filename):
     # Return an empty list if "TILT=" is not found
     return []
 
+# apply formulae and calculation to extracted lines
+
+def calculate(lines):
+    #TODO: implement formulae and calculations
+    
+    
+    new_lines = lines
+    return new_lines
+
 # main function
 if __name__ == "__main__":
     # Change the input to the path of your .ies file
@@ -29,6 +38,8 @@ if __name__ == "__main__":
     # Get the extracted lines
     extracted_lines = read_ies(input_file_path)
     
+    output_lines = calculate(extracted_lines)
+    
     # Create the "output" directory if it doesn't exist
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
@@ -38,4 +49,4 @@ if __name__ == "__main__":
     
     # Write the extracted lines to the output file
     with open(output_file_path, "w") as f:
-        f.writelines(extracted_lines)
+        f.writelines(output_lines)
