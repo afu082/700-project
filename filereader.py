@@ -115,8 +115,10 @@ if __name__ == "__main__":
     # Get the extracted lines
     extracted_lines = read_ies(input_file_path)
     
+    # split data and write to dictionary
     split_info = splitInfo(extracted_lines)
     
+    # additinal function to print dictionary
     visualize_info(split_info)
     
     # Create the "output" directory if it doesn't exist
