@@ -167,7 +167,23 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
                 
             # new x intercept of ray in lens
             
-            intercepts_outer_lens = ((outer_lens_equation[2] - middle_ray_equations[i][1] ) / middle_ray_equations[i][0]) 
+            if(outer_lens_equation[0] == 0 and outer_lens_equation[1] == 0):
+                intercepts_outer_lens = ((outer_lens_equation[2] - middle_ray_equations[i][1] ) / middle_ray_equations[i][0]) 
+                
+            elif(outer_lens_equation[0] == 0 and outer_lens_equation[1] != 0):
+                intercepts_outer_lens = (outer_lens_equation[2] - middle_ray_equations[i][1]) / (middle_ray_equations[i][0] - outer_lens_equation[1])
+                
+            else:
+                
+            
+                first_solution, second_solution = solve_quadratic(outer_lens_equation[0], outer_lens_equation[1] - middle_ray_equations[i][0], outer_lens_equation[2] - middle_ray_equations[i][1])
+                if(initial_ray_equation[0] > 0):
+                    intercepts_outer_lens = min(first_solution, second_solution)
+                else:
+                    intercepts_outer_lens = max(first_solution, second_solution)
+                
+                
+                
             
             # find intercept of inner lens
             
@@ -194,6 +210,7 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
                         middle_ray_equations[i][4] = False
                     else:
                         middle_ray_equations[i][2] = intercepts_inner_lens
+                        # if(middle_ray_equations[i][0] < max_distance):
                         middle_ray_equations[i][3] = -max_distance
                 
             else:
@@ -238,11 +255,11 @@ plt.figure(figsize=(8, 6))
 
 
 
-equation_inner_lens = [1/2, 0, -3, 0, 1, -10, 10]
-equation_outer_lens = [0, 0, -5, 0, 1, -15, 15]
+equation_inner_lens = [1/3, 0, -3, 0, 1, -10, 10]
+equation_outer_lens = [1/10, 0, -5, 0, 1, -15, 15]
 plot_lens(equation_inner_lens)
 initial_ray_equations = find_initial_ray_equations(generate_angles(10, 170, 10)[0], equation_inner_lens)[0]
-# initial_ray_equations = find_initial_ray_equations(generate_angles(50, 50, 10)[0], equation_inner_lens)[0]
+# initial_ray_equations = find_initial_ray_equations(generate_angles(90, 90, 10)[0], equation_inner_lens)[0]
 
 plot_initial_rays(initial_ray_equations)
 
