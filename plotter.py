@@ -109,7 +109,7 @@ def find_initial_ray_equations(angles_degrees, lens_equation):
 def plot_lens(lens_equation):
     x_vals = np.linspace(lens_equation[5], lens_equation[6], 400)
     y_vals = lens_equation[0] * x_vals**2 + lens_equation[1] * x_vals + lens_equation[2]
-    plt.plot(x_vals, y_vals, color = 'red')
+    plt.plot(x_vals, y_vals, color = 'violet')
     
 # only plots rays that diffract
 def plot_initial_rays(ray_equations):
@@ -118,6 +118,22 @@ def plot_initial_rays(ray_equations):
             x_vals = np.linspace(equation[2], equation[3], 400)
             y_vals = equation[0] * x_vals + equation[1] 
             plt.plot(x_vals, y_vals, color = 'blue')
+            
+def plot_middle_rays(ray_equations):
+    for i, equation in enumerate(ray_equations):
+        # if(equation[4] == True):
+            x_vals = np.linspace(equation[2], equation[3], 400)
+            y_vals = equation[0] * x_vals + equation[1] 
+            plt.plot(x_vals, y_vals, color = 'red')
+            
+            
+            
+def plot_exit_rays(ray_equations):
+    for i, equation in enumerate(ray_equations):
+        # if(equation[4] == True):
+            x_vals = np.linspace(equation[2], equation[3], 400)
+            y_vals = equation[0] * x_vals + equation[1] 
+            plt.plot(x_vals, y_vals, color = 'green')
 
 
 
@@ -154,7 +170,6 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
 
 
             # new y intercept of ray in lens
-            # wrong
             if(abs(initial_ray_equation[2]) > abs(initial_ray_equation[3])):
                 middle_ray_equations[i][1] = (initial_ray_equations[i][0] * initial_ray_equations[i][2] + initial_ray_equations[i][1]) - middle_ray_equations[i][0] * initial_ray_equations[i][2]
             else:
@@ -196,17 +211,17 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
             if(initial_ray_equation[0] > 0):
                 if(intercepts_outer_lens < 0):
                     if(intercepts_outer_lens < outer_lens_equation[5] or intercepts_outer_lens > outer_lens_equation[6]):
-                        middle_ray_equations[i][2] = -max_distance
-                        middle_ray_equations[i][3] = intercepts_inner_lens
+                        middle_ray_equations[i][3] = -max_distance
+                        middle_ray_equations[i][2] = intercepts_inner_lens
                         middle_ray_equations[i][4] = False
                     else:
-                        middle_ray_equations[i][2] = intercepts_outer_lens
-                        middle_ray_equations[i][3] = intercepts_inner_lens
+                        middle_ray_equations[i][3] = intercepts_outer_lens
+                        middle_ray_equations[i][2] = intercepts_inner_lens
                         
                 else:
                     if(intercepts_outer_lens < outer_lens_equation[5] or intercepts_outer_lens > outer_lens_equation[6]):
-                        middle_ray_equations[i][2] = -max_distance
-                        middle_ray_equations[i][3] = intercepts_inner_lens
+                        middle_ray_equations[i][3] = -max_distance
+                        middle_ray_equations[i][2] = intercepts_inner_lens
                         middle_ray_equations[i][4] = False
                     else:
                         middle_ray_equations[i][2] = intercepts_inner_lens
@@ -216,17 +231,17 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
             else:
                 if(intercepts_outer_lens > 0):
                     if(intercepts_outer_lens < outer_lens_equation[5] or intercepts_outer_lens > outer_lens_equation[6]):
-                        middle_ray_equations[i][2] = max_distance
-                        middle_ray_equations[i][3] = intercepts_inner_lens
+                        middle_ray_equations[i][3] = max_distance
+                        middle_ray_equations[i][2] = intercepts_inner_lens
                         middle_ray_equations[i][4] = False
                     else:
-                        middle_ray_equations[i][2] = intercepts_outer_lens
-                        middle_ray_equations[i][3] = intercepts_inner_lens
+                        middle_ray_equations[i][3] = intercepts_outer_lens
+                        middle_ray_equations[i][2] = intercepts_inner_lens
                         
                 else:
                     if(intercepts_outer_lens < outer_lens_equation[5] or intercepts_outer_lens > outer_lens_equation[6]):
-                        middle_ray_equations[i][2] = max_distance
-                        middle_ray_equations[i][3] = intercepts_inner_lens
+                        middle_ray_equations[i][3] = max_distance
+                        middle_ray_equations[i][2] = intercepts_inner_lens
                         middle_ray_equations[i][4] = False
                     else:
                         middle_ray_equations[i][2] = intercepts_inner_lens
@@ -246,20 +261,76 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
     
 
 
+def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractive_index_lens, refractive_index_air):
+    
+    exit_ray_equations = copy.deepcopy(middle_ray_equations)
+    middle_angles_in_radians = [gradient_to_angle(equation[0]) for equation in middle_ray_equations]
+    for i, angle in enumerate(middle_angles_in_radians):
+        if(angle < 0):
+            middle_angles_in_radians[i] = pi + angle
+    theta_3 = np.zeros(len(middle_angles_in_radians))
+    
+    
+    for i, middle_ray_equation in enumerate(middle_ray_equations):
+        # only for rays that diffract
+        if(middle_ray_equation[4] == True):
+            # find theta_3
+            a,b,c = find_derivative(outer_lens_equation[0:3])
+            
+            if(abs(middle_ray_equation[2]) > abs(middle_ray_equation[3])):
+                tangent_at_x = a * middle_ray_equation[2] + b
+            else:
+                tangent_at_x = a * middle_ray_equation[3] + b
+            theta_3[i] = gradient_to_angle(tangent_at_x)
+            
+            # new gradient of ray 
+            
+            arcsin_input = (refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])
+            
+            # handle cases of light refracting greater than critical angle
+            # ray going left
+            if(middle_ray_equation[3] < middle_ray_equation[2]):
+                if(arcsin_input > 0):
+                    exit_ray_equations[i][0] = angle_to_gradient(np.degrees(pi/2 - (np.arcsin((refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])))+ theta_3[i]))
+                else:
+                    exit_ray_equations[i][0] = np.nan
+            else:
+                if(arcsin_input < 0):
+                    exit_ray_equations[i][0] = angle_to_gradient(np.degrees(pi/2 - (np.arcsin((refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])))+ theta_3[i]))
+                else:
+                    exit_ray_equations[i][0] = np.nan
 
+            # new y intercept of ray 
+            if(abs(middle_ray_equations[i][2]) > abs(middle_ray_equations[i][3])):
+                exit_ray_equations[i][1] = (middle_ray_equations[i][0] * middle_ray_equations[i][2] + middle_ray_equations[i][1]) - exit_ray_equations[i][0] * middle_ray_equations[i][2]
+            else:
+                exit_ray_equations[i][1] = (middle_ray_equations[i][0] * middle_ray_equation[3] + middle_ray_equations[i][1]) - exit_ray_equations[i][0] * middle_ray_equation[3]
+                
+                
+            # new x limit of rays
+            exit_ray_equations[i][2] = middle_ray_equations[i][3]
+            if(middle_ray_equations[i][2] > middle_ray_equations[i][3]):
+                exit_ray_equations[i][3] = -max_distance
+            else:
+                exit_ray_equations[i][3] = max_distance
+                
+    return exit_ray_equations
+            
+                
+                
+                
 
-
-
+            
 
 plt.figure(figsize=(8, 6))
 
 
 
-equation_inner_lens = [1/3, 0, -3, 0, 1, -10, 10]
-equation_outer_lens = [1/10, 0, -5, 0, 1, -15, 15]
+equation_inner_lens = [1/10, 0, -3, 0, 1, -10, 10]
+equation_outer_lens = [0, 0, -5, 0, 1, -10, 10]
 plot_lens(equation_inner_lens)
-initial_ray_equations = find_initial_ray_equations(generate_angles(10, 170, 10)[0], equation_inner_lens)[0]
-# initial_ray_equations = find_initial_ray_equations(generate_angles(90, 90, 10)[0], equation_inner_lens)[0]
+initial_ray_equations = find_initial_ray_equations(generate_angles(10, 170, 1)[0], equation_inner_lens)[0]
+# initial_ray_equations = find_initial_ray_equations(generate_angles(150, 170, 10)[0], equation_inner_lens)[0]
 
 plot_initial_rays(initial_ray_equations)
 
@@ -267,7 +338,14 @@ plot_lens(equation_outer_lens)
 
 middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, 1.5, 1)
 
-plot_initial_rays(middle_ray_equations)
+plot_middle_rays(middle_ray_equations)
+
+
+exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
+# find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
+
+plot_exit_rays(exit_ray_equations)
+
 
 
 
