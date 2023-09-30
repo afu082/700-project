@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from math import pi
 from math import inf
 import copy 
+import matplotlib.patches as patches
+
 
 
 max_distance = 1000 
@@ -59,7 +61,7 @@ def find_initial_ray_equations(angles_degrees, lens_equation):
     
     ray_equations = []
     for angle in angles_degrees:
-        ray_equations.append([angle_to_gradient(angle), 0, 0, 0, True])
+        ray_equations.append([angle_to_gradient(angle), 0, 0, 0, True,0])
         
     x_intercept = []
 
@@ -247,21 +249,25 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
                         middle_ray_equations[i][2] = intercepts_inner_lens
                         middle_ray_equations[i][3] = max_distance
                 
+     
+    ray_equations_true = []        
             
+    for ray in middle_ray_equations:
+        if(ray[4] == True):
+            ray_equations_true.append(ray)
+                
+    return ray_equations_true
             
-            
-            
-            
-            
-            
-
-    return middle_ray_equations
+  
             
             
     
 
 
 def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractive_index_lens, refractive_index_air):
+    
+        # [m, c, start, finish, diffract]
+
     
     exit_ray_equations = copy.deepcopy(middle_ray_equations)
     middle_angles_in_radians = [gradient_to_angle(equation[0]) for equation in middle_ray_equations]
@@ -290,12 +296,13 @@ def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractiv
             # handle cases of light refracting greater than critical angle
             # ray going left
             if(middle_ray_equation[3] < middle_ray_equation[2]):
-                if(arcsin_input > 0):
+                if(arcsin_input >= 0 and arcsin_input < 1):
                     exit_ray_equations[i][0] = angle_to_gradient(np.degrees(pi/2 - (np.arcsin((refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])))+ theta_3[i]))
+                
                 else:
                     exit_ray_equations[i][0] = np.nan
             else:
-                if(arcsin_input < 0):
+                if(arcsin_input < 0 and arcsin_input > -1):
                     exit_ray_equations[i][0] = angle_to_gradient(np.degrees(pi/2 - (np.arcsin((refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])))+ theta_3[i]))
                 else:
                     exit_ray_equations[i][0] = np.nan
@@ -314,7 +321,15 @@ def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractiv
             else:
                 exit_ray_equations[i][3] = max_distance
                 
-    return exit_ray_equations
+    
+    ray_equations_true = []
+
+                
+    for ray in exit_ray_equations:
+        if(ray[4] == True):
+            ray_equations_true.append(ray)
+                
+    return ray_equations_true
             
                 
                 
@@ -326,11 +341,11 @@ plt.figure(figsize=(8, 6))
 
 
 
-equation_inner_lens = [1/10, 0, -3, 0, 1, -10, 10]
-equation_outer_lens = [0, 0, -5, 0, 1, -10, 10]
+equation_inner_lens = [0, 0, -3, 0, 1, -10, 10]
+equation_outer_lens = [1/50, 0, -5, 0, 1, -10, 10]
 plot_lens(equation_inner_lens)
-initial_ray_equations = find_initial_ray_equations(generate_angles(10, 170, 1)[0], equation_inner_lens)[0]
-# initial_ray_equations = find_initial_ray_equations(generate_angles(150, 170, 10)[0], equation_inner_lens)[0]
+initial_ray_equations = find_initial_ray_equations(generate_angles(5, 175, 3)[0], equation_inner_lens)[1]
+
 
 plot_initial_rays(initial_ray_equations)
 
@@ -342,7 +357,6 @@ plot_middle_rays(middle_ray_equations)
 
 
 exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
-# find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
 
 plot_exit_rays(exit_ray_equations)
 
@@ -350,9 +364,31 @@ plot_exit_rays(exit_ray_equations)
 
 
 
-plt.xlim(-20, 20)
-plt.ylim(-40, 0)
-    
+plt.xlim(-50, 50)
+plt.ylim(-50, 0)
+
+
+circle = patches.Circle((0, 0), radius=50, fill=False, color='red', linestyle='--')
+plt.gca().add_patch(circle)
+
+angles_deg = np.arange(0, 360, 15)
+angles_rad = np.deg2rad(angles_deg)
+x_points = 50 * np.cos(angles_rad)
+y_points = 50 * np.sin(angles_rad)
+
+plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
+
+
+circle = patches.Circle((0, 0), radius=20, fill=False, color='red', linestyle='--')
+plt.gca().add_patch(circle)
+
+angles_deg = np.arange(0, 360, 15)
+angles_rad = np.deg2rad(angles_deg)
+x_points = 20 * np.cos(angles_rad)
+y_points = 20 * np.sin(angles_rad)
+
+plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
+
 
     
 plt.xlabel('x')
@@ -363,6 +399,3 @@ plt.axvline(0, color='black', linewidth=0.5)
 plt.grid(True, linestyle='--', alpha=0.7)
 
 plt.show()
-
-    
-    
