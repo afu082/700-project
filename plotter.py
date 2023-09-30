@@ -368,6 +368,9 @@ plt.xlim(-50, 50)
 plt.ylim(-50, 0)
 
 
+# circle for potential ies output intensity calculation
+
+
 circle = patches.Circle((0, 0), radius=50, fill=False, color='red', linestyle='--')
 plt.gca().add_patch(circle)
 
