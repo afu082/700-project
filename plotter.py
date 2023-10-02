@@ -101,7 +101,7 @@ def find_initial_ray_equations(angles_degrees, lens_equation):
             ray_equations_false.append(ray)
         
 
-    return ray_equations, ray_equations_true, ray_equations_false
+    return ray_equations, ray_equations_true
 
 # keep all lines but leave limits untouched when not diffracting
     
@@ -330,12 +330,79 @@ def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractiv
             ray_equations_true.append(ray)
                 
     return ray_equations_true
-            
-                
-                
-                
 
+
+
+def percentage_light_lost(all_initial_ray_equations, exit_ray_equations):
+    percent_light_lost = (1 - len(exit_ray_equations) / len(all_initial_ray_equations)) * 100
+
+    return percent_light_lost
+
+
+
+def find_intercept_circle_exit_rays(exit_ray_equations):
+    #circle has radius of 500
+    x_intercepts = np.zeros(len(exit_ray_equations))
+    
+    for i, exit_ray_equation in enumerate(exit_ray_equations):
+        if(exit_ray_equation[0] == 0):
+            return 0
+        else:
             
+            if(i < len(exit_ray_equations)/2):
+                x_intercepts[i] = (min(solve_quadratic(exit_ray_equation[0]**2 + 1, 2*exit_ray_equation[0]*exit_ray_equation[1], exit_ray_equation[1]**2 - 500**2)))
+            else:
+                x_intercepts[i] = (max(solve_quadratic(exit_ray_equation[0]**2 + 1, 2*exit_ray_equation[0]*exit_ray_equation[1], exit_ray_equation[1]**2 - 500**2)))
+    
+    return x_intercepts
+
+
+def find_x_intercepts_of_markers():
+    angles_deg = np.arange(0, 360, 5)
+    angles_rad = np.deg2rad(angles_deg)
+    x_points = 500 * np.cos(angles_rad)
+    
+    x_points = np.append(x_points, 500)
+    
+
+    
+    
+    return x_points[36::]
+
+# def find_ies_output_intensity(x_intercepts, x_intercepts_markers):
+#     intensity = 0
+#     for i, x_intercept in enumerate(x_intercepts):
+#         if(x_intercept != 0):
+#             for j, x_intercept_marker in enumerate(x_intercepts_markers):
+#                 if(abs(x_intercept - x_intercept_marker) < 0.01):
+#                     intensity += 1
+#     return intensity/len(x_intercepts_markers)
+
+
+
+
+def find_intensity_per_marker(x_intercepts_exit_rays, x_intercepts_markers):
+    
+    intensity_per_marker = np.zeros(len(x_intercepts_markers) - 1)
+    
+    for i in range(len(x_intercepts_markers) - 1):
+        for j in range(len(x_intercepts_exit_rays)):
+            if(x_intercepts_markers[i] < x_intercepts_exit_rays[j] and x_intercepts_markers[i+1] > x_intercepts_exit_rays[j]):
+                intensity_per_marker[i] += 1
+    
+    return intensity_per_marker
+                
+                
+        
+    
+    
+    
+    
+    
+    return 0
+    
+
+
 
 plt.figure(figsize=(8, 6))
 
@@ -344,7 +411,8 @@ plt.figure(figsize=(8, 6))
 equation_inner_lens = [0, 0, -3, 0, 1, -10, 10]
 equation_outer_lens = [1/50, 0, -5, 0, 1, -10, 10]
 plot_lens(equation_inner_lens)
-initial_ray_equations = find_initial_ray_equations(generate_angles(5, 175, 3)[0], equation_inner_lens)[1]
+
+all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(5, 175, .05)[0], equation_inner_lens)
 
 
 plot_initial_rays(initial_ray_equations)
@@ -363,32 +431,53 @@ plot_exit_rays(exit_ray_equations)
 
 
 
+x_intercepts_exit_rays = find_intercept_circle_exit_rays(exit_ray_equations)
 
-plt.xlim(-50, 50)
-plt.ylim(-50, 0)
+x_intercepts_markers = find_x_intercepts_of_markers()
+
+
+intensity_per_marker = find_intensity_per_marker(x_intercepts_exit_rays, x_intercepts_markers)
+
+
+
+
+
+
+
+# print(percentage_light_lost(all_initial_ray_equations, exit_ray_equations))
+
+
+
+
+
+# plt.xlim(-50, 50)
+# plt.ylim(-50, 0)
+
+plt.xlim(-550, 550)
+plt.ylim(-700, 0)
 
 
 # circle for potential ies output intensity calculation
 
 
-circle = patches.Circle((0, 0), radius=50, fill=False, color='red', linestyle='--')
+circle = patches.Circle((0, 0), radius=500, fill=False, color='red', linestyle='--')
 plt.gca().add_patch(circle)
 
-angles_deg = np.arange(0, 360, 15)
+angles_deg = np.arange(0, 360, 5)
 angles_rad = np.deg2rad(angles_deg)
-x_points = 50 * np.cos(angles_rad)
-y_points = 50 * np.sin(angles_rad)
+x_points = 500 * np.cos(angles_rad)
+y_points = 500 * np.sin(angles_rad)
 
 plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
 
 
-circle = patches.Circle((0, 0), radius=20, fill=False, color='red', linestyle='--')
+circle = patches.Circle((0, 0), radius=1000, fill=False, color='red', linestyle='--')
 plt.gca().add_patch(circle)
 
-angles_deg = np.arange(0, 360, 15)
+angles_deg = np.arange(0, 360, 5)
 angles_rad = np.deg2rad(angles_deg)
-x_points = 20 * np.cos(angles_rad)
-y_points = 20 * np.sin(angles_rad)
+x_points = 1000 * np.cos(angles_rad)
+y_points = 1000 * np.sin(angles_rad)
 
 plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
 
