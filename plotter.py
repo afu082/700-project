@@ -391,15 +391,28 @@ def find_intensity_per_marker(x_intercepts_exit_rays, x_intercepts_markers):
                 intensity_per_marker[i] += 1
     
     return intensity_per_marker
-                
-                
-        
     
+
+
+def plot_intensity_per_marker(intensity_per_marker):
     
-    
-    
-    
-    return 0
+    angles_deg = np.arange(180, 361, 5)
+    angles_rad = np.deg2rad(angles_deg)
+    # per 5 degrees
+    for i,  intensity in enumerate(intensity_per_marker):
+        if(intensity > 0):
+            
+            
+
+            
+            x_points = intensity * np.cos(angles_rad[i])
+            y_points = intensity * np.sin(angles_rad[i])
+
+            plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
+            
+            
+            
+
     
 
 
@@ -407,26 +420,21 @@ def find_intensity_per_marker(x_intercepts_exit_rays, x_intercepts_markers):
 plt.figure(figsize=(8, 6))
 
 
+# set lens shapes here
 
 equation_inner_lens = [0, 0, -3, 0, 1, -10, 10]
-equation_outer_lens = [1/50, 0, -5, 0, 1, -10, 10]
-plot_lens(equation_inner_lens)
+equation_outer_lens = [0, 0, -5, 0, 1, -10, 10]
+# plot_lens(equation_inner_lens)
+# plot_lens(equation_outer_lens)
 
+
+# set rays here 
 all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(5, 175, .05)[0], equation_inner_lens)
-
-
-plot_initial_rays(initial_ray_equations)
-
-plot_lens(equation_outer_lens)
-
+# plot_initial_rays(initial_ray_equations)
 middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, 1.5, 1)
-
-plot_middle_rays(middle_ray_equations)
-
-
+# plot_middle_rays(middle_ray_equations)
 exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
-
-plot_exit_rays(exit_ray_equations)
+# plot_exit_rays(exit_ray_equations)
 
 
 
@@ -437,6 +445,9 @@ x_intercepts_markers = find_x_intercepts_of_markers()
 
 
 intensity_per_marker = find_intensity_per_marker(x_intercepts_exit_rays, x_intercepts_markers)
+
+
+plot_intensity_per_marker(intensity_per_marker)
 
 
 
@@ -455,6 +466,10 @@ intensity_per_marker = find_intensity_per_marker(x_intercepts_exit_rays, x_inter
 
 plt.xlim(-550, 550)
 plt.ylim(-700, 0)
+
+# plt.xlim(-7, 7)
+# plt.ylim(-10, 0)
+
 
 
 # circle for potential ies output intensity calculation
