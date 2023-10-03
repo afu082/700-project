@@ -429,12 +429,12 @@ equation_outer_lens = [0, 0, -5, 0, 1, -10, 10]
 
 
 # set rays here 
-all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(5, 175, .05)[0], equation_inner_lens)
-# plot_initial_rays(initial_ray_equations)
+all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(5, 175, 3)[0], equation_inner_lens)
+plot_initial_rays(initial_ray_equations)
 middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, 1.5, 1)
-# plot_middle_rays(middle_ray_equations)
+plot_middle_rays(middle_ray_equations)
 exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
-# plot_exit_rays(exit_ray_equations)
+plot_exit_rays(exit_ray_equations)
 
 
 
