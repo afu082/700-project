@@ -4,6 +4,94 @@ from math import pi
 from math import inf
 import copy 
 import matplotlib.patches as patches
+import os
+
+
+# read in .ies file
+def read_ies(filename):
+    # open file
+    with open(filename, "r") as f:
+        # read file
+        lines = f.readlines()
+        
+        # return all lines after the first line beginning with TILT
+        index = lines.index(next(line for line in lines if line.startswith("TILT=")))
+        a = lines[index:]
+        return a
+
+
+
+def splitInfo(lines):
+    info = {}
+
+    # Parse tilt information
+    info["tilt_val"] = lines[0][5:-1]
+    lines.pop(0)
+    if info["tilt_val"] == "INCLUDE":
+        info["lamp_to_luminaire"] = lines.pop(0)
+        info["number_tilt_angles"] = lines.pop(0)
+        info["angles"] = lines.pop(0)
+        info["multiplying_factors"] = lines.pop(0)
+
+    # Parse first line
+    first_line = lines.pop(0).split()
+    info["num_lamps"] = first_line[0]
+    info["lumen_per_lamp"] = first_line[1]
+    info["candela_multiplier"] = first_line[2]
+    info["num_vertical_angles"] = first_line[3]
+    info["num_horizontal_angles"] = first_line[4]
+    info["photometric_type"] = first_line[5]
+    info["units_type"] = first_line[6]
+    info["width"] = first_line[7]
+    info["length"] = first_line[8]
+    info["height"] = first_line[9]
+
+    # Parse second line
+    second_line = lines.pop(0).split()
+    info["ballast_factor"] = second_line[0]
+    info["file_generation_type"] = second_line[1]
+    info["input_watts"] = second_line[2]
+
+    # Parse vertical and horizontal angles
+    info["vertical_angles"] = lines.pop(0).split()
+    info["horizontal_angles"] = lines.pop(0).split()
+
+    # Parse candela values
+    candela_values = []
+    for line in lines:
+        candela_values.append(line.split())
+    info["candela_values"] = candela_values
+
+    return info
+
+
+def writeOutput(output_file_path, extracted_lines, info):
+    with open(output_file_path, "w") as f:
+        # Write back the tile
+        f.write(f"TILT={info['tilt_val']}\n")
+
+
+        # Write the parsed dictionary values
+        if "lamp_to_luminaire" in info:
+            f.write(f"{info['lamp_to_luminaire']}\n")
+            f.write(f"{info['number_tilt_angles']}\n")
+            f.write(f"{info['angles']}\n")
+            f.write(f"{info['multiplying_factors']}\n")
+
+        f.write(f"{info['num_lamps']} {info['lumen_per_lamp']} {info['candela_multiplier']} "
+                f"{info['num_vertical_angles']} {info['num_horizontal_angles']} "
+                f"{info['photometric_type']} {info['units_type']} "
+                f"{info['width']} {info['length']} {info['height']}\n")
+
+        f.write(f"{info['ballast_factor']} {info['file_generation_type']} {info['input_watts']}\n")
+
+        f.write(' '.join(info['vertical_angles']) + '\n')
+        f.write(' '.join(info['horizontal_angles']) + '\n')
+        
+        
+        # write each value of extracted_lines which is a numpy array, into the file separated by a space and to 3 decimal places
+
+        f.write(' '.join(map(lambda x: "{:.3f}".format(x), extracted_lines)) + '\n')
 
 
 
@@ -421,12 +509,12 @@ def plot_intensity_per_marker(intensity_per_marker):
             plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
             
             
-def apply_scaling(intensity_per_marker, percent_light_lost, size, luminous_flux = 1800):
+def apply_scaling(intensity_per_marker, percent_light_lost, size, luminous_flux=1800):
     scaled_intensity = np.zeros(len(intensity_per_marker))
     for i, intensity in enumerate(intensity_per_marker):
-        scaled_intensity[i] =  luminous_flux * (intensity * np.cos(np.deg2rad(5*i))  * (1 - percent_light_lost/100)) / (size * 10)
-        # scaled_intensity[i] = luminous_flux  * (intensity * np.cos(np.deg2rad(5*i)) * (1 - percent_light_lost/100)) / (size * 10)
-    return scaled_intensity
+        scaled_intensity[i] = luminous_flux * (intensity * np.cos(np.deg2rad(5 * i)) * (1 - percent_light_lost / 100)) / (size)
+    scaled_intensity_3dp = np.around(scaled_intensity, decimals=3)
+    return scaled_intensity_3dp
 
 
 
@@ -438,70 +526,80 @@ if __name__ == "__main__":
 
 
     # set lens shapes here
-
-    # equation_inner_lens = [0, 0, 0, 0, 1, -10, 10]
-    # equation_outer_lens = [0, 0, -0.001, 0, 1, -15, 15]
+    # [a,b,c,d,e,f,g] where a,b,c,d,e are the coefficients of the equation ax^2 + bx + c = dy^2 + ey and f and g are the x ranges of the lens (width)
+    # default inner lens is 0x^2 + 0x -3 = 0y^2 + 1y 
+    # which is y = -3
+    # default outer lens is 1/50x^2 + 0x -6 = 0y^2 + 1y 
+    # which is y = 1/50x^2 - 6
     
-    equation_inner_lens = [1/50, 0, -3, 0, 1, -10, 10]
-    equation_outer_lens = [1/50, 0, -5, 0, 1, -15, 15]
+    equation_inner_lens = [0, 0, -3, 0, 1, -10, 10]
+    equation_outer_lens = [1/50, 0, -6, 0, 1, -10, 10]
     
     
-    # plot_lens(equation_inner_lens)
-    # plot_lens(equation_outer_lens)
+    plot_lens(equation_inner_lens)
+    plot_lens(equation_outer_lens)
 
 
-    # set rays here 
-    all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(0, 180, .01)[0], equation_inner_lens)
-    # plot_initial_rays(initial_ray_equations)
+    # set number of rays here, default is per 0.001 degrees (180,000 rays)
+    all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(0, 180, .001)[0], equation_inner_lens)
+
     middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, 1.5, 1)
-    # plot_middle_rays(middle_ray_equations)
+
     exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
+    
+    # uncomment to ploy rays, DO NOT PLOT FOR LARGE NUMBER OF RAYS
+    # recommended number of rays is per 1 degree (180 rays)
+    
+    
+    # plot_initial_rays(initial_ray_equations)
+    # plot_middle_rays(middle_ray_equations)
     # plot_exit_rays(exit_ray_equations)
 
 
 
 
     x_intercepts_exit_rays = find_intercept_circle_exit_rays(exit_ray_equations)
-
     x_intercepts_markers = find_x_intercepts_of_markers()
-
-
     intensity_per_marker = find_intensity_per_marker(x_intercepts_exit_rays, x_intercepts_markers)
-    
-    print(intensity_per_marker)
-
-
     scaled_intensity = apply_scaling(intensity_per_marker, percentage_light_lost(all_initial_ray_equations, exit_ray_equations), len(all_initial_ray_equations))
-    
-    print(scaled_intensity)
-    
+
+
+    # uncomment to plot luminous intensity distribution curve
     plot_intensity_per_marker(scaled_intensity)
+    
+    # Change the input to the path of your .ies file
+    input_file_path = "./TestFile1/template.ies"
+    
+    # Extract the filename without extension from the input file path
+    input_filename = os.path.splitext(os.path.basename(input_file_path))[0]
+    
+    # Get the extracted lines
+    extracted_lines = read_ies(input_file_path)
+    
+    # split data and write to dictionary
+    split_info = splitInfo(extracted_lines)
+    
+    # Create the "output" directory if it doesn't exist
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Construct the output file path with the name "inputname_output.ies"
+    output_file_path = os.path.join(output_dir, f"output.ies")
+    
+    # Write the extracted lines to the output file
+    writeOutput(output_file_path, scaled_intensity, split_info)
 
 
-
-    # plt.xlim(-35, 35)
-    # plt.ylim(-50, 0)
+    # change view distance of plot with preset views below
+    
+    plt.xlim(-35, 35)
+    plt.ylim(-50, 0)
 
     # plt.xlim(-550, 550)
     # plt.ylim(-700, 0)
 
-    plt.xlim(-7, 7)
-    plt.ylim(-10, 0)
-
-
-
-    # circle for potential ies output intensity calculation
-
-    # circle = patches.Circle((0, 0), radius=10, fill=False, color='red', linestyle='--')
-    # plt.gca().add_patch(circle)
-
-    # angles_deg = np.arange(0, 360, 5)
-    # angles_rad = np.deg2rad(angles_deg)
-    # x_points = 500 * np.cos(angles_rad)
-    # y_points = 500 * np.sin(angles_rad)
-
-    # plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
-
+    # plt.xlim(-7, 7)
+    # plt.ylim(-10, 0)
 
 
 
@@ -517,21 +615,10 @@ if __name__ == "__main__":
     plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
 
 
-    circle = patches.Circle((0, 0), radius=1000, fill=False, color='red', linestyle='--')
-    plt.gca().add_patch(circle)
-
-    angles_deg = np.arange(0, 360, 5)
-    angles_rad = np.deg2rad(angles_deg)
-    x_points = 1000 * np.cos(angles_rad)
-    y_points = 1000 * np.sin(angles_rad)
-
-    plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
-
-
         
     plt.xlabel('x (units)')
     plt.ylabel('y (units)')
-    plt.title('Path of light at angles of 1 degree increments')
+    # plt.title('Light distribution curve points of no lens')
     plt.axhline(0, color='black', linewidth=0.5)
     plt.axvline(0, color='black', linewidth=0.5)
     plt.grid(True, linestyle='--', alpha=0.7)
