@@ -139,14 +139,14 @@ def plot_lens(lens_equation):
 # only plots rays that diffract
 def plot_initial_rays(ray_equations):
     for i, equation in enumerate(ray_equations):
-         if(equation[4] == True):
+         # if(equation[4] == True):
             x_vals = np.linspace(equation[2], equation[3], 400)
             y_vals = equation[0] * x_vals + equation[1] 
             plt.plot(x_vals, y_vals, color = 'blue')
             
 def plot_middle_rays(ray_equations):
     for i, equation in enumerate(ray_equations):
-         if(equation[4] == True):
+         # if(equation[4] == True):
             x_vals = np.linspace(equation[2], equation[3], 400)
             y_vals = equation[0] * x_vals + equation[1] 
             plt.plot(x_vals, y_vals, color = 'red')
@@ -155,7 +155,7 @@ def plot_middle_rays(ray_equations):
             
 def plot_exit_rays(ray_equations):
     for i, equation in enumerate(ray_equations):
-         if(equation[4] == True):
+         # if(equation[4] == True):
             x_vals = np.linspace(equation[2], equation[3], 400)
             y_vals = equation[0] * x_vals + equation[1] 
             plt.plot(x_vals, y_vals, color = 'green')
@@ -342,7 +342,10 @@ def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractiv
     # print(len(middle_ray_equations))
     # print("len diffract")
     # print(sum(1 for middle_ray_equation in middle_ray_equations if middle_ray_equation[4]))
-    arcsin_input = (refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])
+
+    # arcsin_input = (refractive_index_lens / refractive_index_air) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])
+    arcsin_input = ( refractive_index_air/  refractive_index_lens) * np.sin(pi/2 - theta_3[i] - middle_angles_in_radians[i])
+
     for i, middle_ray_equation in enumerate(middle_ray_equations):
         # only for rays that diffract
         if(middle_ray_equation[4] == True):
@@ -439,16 +442,10 @@ def find_exit_ray_equations(middle_ray_equations, outer_lens_equation, refractiv
 
 
 
-plt.figure(figsize=(8, 6))
-
-# rays = [m, c, start, finish, diffract]
-#lenses are in the form [a,b,c,d,e,f,g] where a,b,c,d,e are the coefficients of the equation ax^2 + bx + c = dy^2 + ey and f and g are the x ranges of the lens
-
-equation_inner_lens =  [0, 0, -1, 0, 1, -10, 10]
-equation_outer_lens = [1/50, 0, -10, 0, 1, -10, 10]
 
 
-input_file_path = "./TestFile1/test.ies"
+
+input_file_path = "./TestFile1/test2.ies"
 input_filename = os.path.splitext(os.path.basename(input_file_path))[0]
     
 
@@ -534,26 +531,7 @@ if horizontal_angle_index is not None:
 
 
 
-#print the angles
 
-print("initial_angles")
-initial_angles.pop(0)
-print(initial_angles)
-
-print("initial_candelas_values[0]")
-print(initial_candelas_values[0])
-
-print("len(initial_angles)")
-print(len(initial_angles))
-
-if num_horizontal_angles == 1:
-    print("len(initial_candelas_values)")
-    print(len(initial_candelas_values))
-else:
-    print("len(initial_candelas_values[0])")
-    print(len(initial_candelas_values[0]))
-
-print()  # Just for a blank line
 
 
 
@@ -567,203 +545,271 @@ print()  # Just for a blank line
 #     55, 53.4875, 51.95, 50.3875, 48.8, 47.1875, 45.55, 43.8875, 42.2, 40.4875,
 #     38.75, 36.9875, 35.2, 33.3875, 31.55, 29.6875, 27.8, 25.8875, 23.95, 21.9875,
 #     20, 17.9875, 15.95, 13.8875, 11.8, 9.6875, 7.55, 5.3875, 3.2, 0.9875, -1.25]
+#initial_angles=[]
 
 
 
-initial_ray_equations = find_initial_ray_equations(initial_angles, equation_inner_lens)[0]
 
-# initial_ray_equations = find_initial_ray_equations(initial_angles, equation_inner_lens)[0]
-# initial_ray_equations = find_initial_ray_equations(generate_angles(150, 170, 10)[0], equation_inner_lens)[0]
-middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, 1, 1)
+# rays = [m, c, start, finish, diffract]
+#lenses are in the form [a,b,c,d,e,f,g] where a,b,c,d,e are the coefficients of the equation ax^2 + bx + c = dy^2 + ey and f and g are the x ranges of the lens
 
-
-
-exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1, 1)
-
-print("\nangles in exit_ray_equations found")
-print_degrees_of_ray_eqns(exit_ray_equations)
-
-# print(len(initial_ray_equations))
-# print(len(middle_ray_equations))
-# print(len(exit_ray_equations))
-#########
+# equation_inner_lens =  [0, 0, -1, 0, 1, -10, 10]
+# equation_outer_lens = [1/50, 0, -10, 0, 1, -10, 10]
 
 
-# exit_angles = [np.degrees(gradient_to_angle(exit_ray[0])) for exit_ray in exit_ray_equations]
-# converted_exit_angles = [90 - angle for angle in exit_angles]
-# print(converted_exit_angles)
+# refractive_index_air= 1
+# refractive_index_lens = 1
+initial_angle_candela_map = {}
+exit_angle_candela_map = {}
 
-new_exit_ray_equations = copy.deepcopy(exit_ray_equations)
-exit_angles1 = [] 
+def convert(refractive_index_air, refractive_index_lens, equation_inner_lens, equation_outer_lens):
 
-for ray in new_exit_ray_equations:
-    old_gradient = ray[0]
-    old_angle = gradient_to_angle(old_gradient)
-    new_angle = pi/2 - old_angle
+    #print the angles
 
-    # print("old degrees -> new degrees")
-    # print(f"{np.degrees(old_angle)} {np.degrees(new_angle)}")
-    # print(np.degrees(old_angle) + np.degrees(new_angle) )
-    exit_angles1.append(np.degrees(new_angle))
-    # new_gradient = angle_to_gradient(new_angle)
+    print("initial_angles")
+    initial_angles.pop(0)
+    print(initial_angles)
 
+    print("initial_candelas_values[0]")
+    print(initial_candelas_values[0])
 
+    print("len(initial_angles)")
+    print(len(initial_angles))
 
-exit_angles1= [90] + exit_angles1
-exit_angles1[-1] = 0
-    # ray[0] = new_gradient
-# print("exit angles1")
-# print(exit_angles1)
-exit_angles = exit_angles1[::-1]
-
-#print_degrees_of_ray_eqns(exit_ray_equations)
-angles_dont_exit =[]
-exit_candelas = []
-i=0
-j=0
-exit_ray_equations.reverse()
-while i < len(exit_ray_equations):
-    if exit_ray_equations[i][4] == False:
-        #exit_angles.append(initial_angles[i])
-        exit_candelas.append(0)
-        angles_dont_exit.append(exit_angles[i])
-
+    if num_horizontal_angles == 1:
+        print("len(initial_candelas_values)")
+        print(len(initial_candelas_values))
     else:
-        #exit_angles.append(np.degrees(gradient_to_angle(exit_ray_equations[j][0])))
-        exit_candelas.append(initial_candelas_values[i])
-        #j+=1
-        #print(np.degrees(gradient_to_angle(exit_ray_equations[j][0])))
-    i+=1
+        print("len(initial_candelas_values[0])")
+        print(len(initial_candelas_values[0]))
 
+    print()  # Just for a blank line
 
-angles_dont_exit.reverse()
-exit_candelas.append(0)
+    plt.figure(figsize=(8, 6))
+    initial_ray_equations = find_initial_ray_equations(initial_angles, equation_inner_lens)[0]
 
-
-
-# print(exit_candelas)
-# print("angles dont exist from below and up")
-# print(angles_dont_exit[-1])
-# print("number of angles lost")
-# print(len(angles_dont_exit))
+    # initial_ray_equations = find_initial_ray_equations(initial_angles, equation_inner_lens)[0]
+    # initial_ray_equations = find_initial_ray_equations(generate_angles(150, 170, 10)[0], equation_inner_lens)[0]
+    middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, refractive_index_lens, refractive_index_air)
 
 
 
-# for i, j in range(len(initial_angles)):
-#         if exit_ray_equations[i][4] == True:
-#             exit_angles.append(gradient_to_angle(exit_ray_equations[j][0]))
-#             exit_candelas.append(initial_candelas_values[i])
-#         else:
-#             exit_angles.append(initial_angles[i])
-#             exit_candelas.append(0)
+    exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1, refractive_index_air)
+
+    print("\nangles in exit_ray_equations found")
+    print_degrees_of_ray_eqns(exit_ray_equations)
+
+    # print(len(initial_ray_equations))
+    # print(len(middle_ray_equations))
+    # print(len(exit_ray_equations))
+    #########
+
+
+    # exit_angles = [np.degrees(gradient_to_angle(exit_ray[0])) for exit_ray in exit_ray_equations]
+    # converted_exit_angles = [90 - angle for angle in exit_angles]
+    # print(converted_exit_angles)
+
+    new_exit_ray_equations = copy.deepcopy(exit_ray_equations)
+    exit_angles1 = [] 
+
+    for ray in new_exit_ray_equations:
+        old_gradient = ray[0]
+        old_angle = gradient_to_angle(old_gradient)
+        new_angle = pi/2 - old_angle
+
+        # print("old degrees -> new degrees")
+        # print(f"{np.degrees(old_angle)} {np.degrees(new_angle)}")
+        # print(np.degrees(old_angle) + np.degrees(new_angle) )
+        exit_angles1.append(np.degrees(new_angle))
+        # new_gradient = angle_to_gradient(new_angle)
 
 
 
-# exit_angles = [gradient_to_angle(lst[0]) if lst[4] == True else initial_angles[i] for i, lst in enumerate(exit_ray_equations)]
+    exit_angles1= [90] + exit_angles1
+    exit_angles1[-1] = 0
+        # ray[0] = new_gradient
+    # print("exit angles1")
+    # print(exit_angles1)
 
-# exit_angles_in_degrees = [0] + exit_angles_in_degrees
-# print ("exit angles in degrees in output")
-# print(exit_angles)
+
+
+    exit_angles = exit_angles1[::-1]
+    print(exit_angles)
+    print(len(exit_angles))
+
+
+    #print_degrees_of_ray_eqns(exit_ray_equations)
+    angles_do_exit =[]
+    exit_candelas = []
+    i=0
+    j=0
+    exit_ray_equations.reverse()
+    while i < len(exit_ray_equations):
+        if exit_ray_equations[i][4] == False:
+            #exit_angles.append(initial_angles[i])
+            exit_candelas.append(0)
+            
+
+        else:
+            #exit_angles.append(np.degrees(gradient_to_angle(exit_ray_equations[j][0])))
+            exit_candelas.append(initial_candelas_values[i])
+            angles_do_exit.append(exit_angles[i])
+            #j+=1
+            #print(np.degrees(gradient_to_angle(exit_ray_equations[j][0])))
+        i+=1
+
+
+    # angles_dont_exit.reverse()
+    print("angles_do_exit")
+    print(angles_do_exit)
+    exit_candelas.append(0)
 
 
 
-# exit_candelas = [initial_candelas_values[0]]
-# for i in range(len(initial_candelas_values)):
-#         if exit_ray_equations[i][4] == True:
-#             exit_candelas.append(initial_candelas_values[i])
-#         else:
-#             exit_candelas.append(0)
+    # print(exit_candelas)
+    # print("angles dont exist from below and up")
+    # print(angles_dont_exit[-1])
+    # print("number of angles lost")
+    # print(len(angles_dont_exit))
+
+
+
+    # for i, j in range(len(initial_angles)):
+    #         if exit_ray_equations[i][4] == True:
+    #             exit_angles.append(gradient_to_angle(exit_ray_equations[j][0]))
+    #             exit_candelas.append(initial_candelas_values[i])
+    #         else:
+    #             exit_angles.append(initial_angles[i])
+    #             exit_candelas.append(0)
+
+
+
+    # exit_angles = [gradient_to_angle(lst[0]) if lst[4] == True else initial_angles[i] for i, lst in enumerate(exit_ray_equations)]
+
+    # exit_angles_in_degrees = [0] + exit_angles_in_degrees
+    # print ("exit angles in degrees in output")
+    # print(exit_angles)
+
+
+
+    # exit_candelas = [initial_candelas_values[0]]
+    # for i in range(len(initial_candelas_values)):
+    #         if exit_ray_equations[i][4] == True:
+    #             exit_candelas.append(initial_candelas_values[i])
+    #         else:
+    #             exit_candelas.append(0)
+            
+
+
+
+    # # Find indices of np.nan in list1
+    # nan_indices = [i for i, x in enumerate(exit_angles_in_degrees) if isinstance(x, float) and np.isnan(x)]
+    # # Remove corresponding elements from both lists
+    # for i in reversed(nan_indices):
+    #     del exit_angles_in_degrees[i]
+    #     if num_horizontal_angles==1:
+    #         del exit_candelas[i]
+    #     else:
+    #         for sublist in exit_candelas:
+    #             del sublist[i]
         
 
+    # print(len(exit_angles))
+    # print(len(exit_candelas))
+
+    # print(exit_angles)
+
+    exit_angles_no_nan = []
+    exit_candelas_no_nan = []
+
+    for i in range(len(exit_angles)):
+        if not np.isnan(exit_angles[i]):
+            exit_angles_no_nan.append(exit_angles[i])
+            exit_candelas_no_nan.append(exit_candelas[i])
+
+    print(exit_angles_no_nan)
+    print(exit_candelas_no_nan)
+
+    print(len(exit_angles_no_nan))
+    print(len(exit_candelas_no_nan))
+
+    exit_angles= exit_angles_no_nan
+    exit_candelas= exit_candelas_no_nan
 
 
-# # Find indices of np.nan in list1
-# nan_indices = [i for i, x in enumerate(exit_angles_in_degrees) if isinstance(x, float) and np.isnan(x)]
-# # Remove corresponding elements from both lists
-# for i in reversed(nan_indices):
-#     del exit_angles_in_degrees[i]
-#     if num_horizontal_angles==1:
-#         del exit_candelas[i]
-#     else:
-#         for sublist in exit_candelas:
-#             del sublist[i]
-    
-
-# print(len(exit_angles))
-# print(len(exit_candelas))
-
-# print(exit_angles)
-
-exit_angles_no_nan = []
-exit_candelas_no_nan = []
-
-for i in range(len(exit_angles)):
-    if not np.isnan(exit_angles[i]):
-        exit_angles_no_nan.append(exit_angles[i])
-        exit_candelas_no_nan.append(exit_candelas[i])
-
-print(exit_angles_no_nan)
-print(exit_candelas_no_nan)
-
-exit_angles= exit_angles_no_nan
-exit_candelas= exit_candelas_no_nan
-
-# edit num vertical lines
-line = lines[num_angles_index]
-numbers = line.split()
-numbers[3] = str(len(exit_angles))
-new_line = " ".join(numbers) + "\n"
-lines[num_angles_index] = new_line
+    # edit num vertical lines
+    line = lines[num_angles_index]
+    numbers = line.split()
+    numbers[3] = str(len(exit_angles))
+    new_line = " ".join(numbers) + "\n"
+    lines[num_angles_index] = new_line
 
 
 
-output_dir = "output"
-os.makedirs(output_dir, exist_ok=True)
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
 
-# create file
-output_lines = []
+    # create file
+    output_lines = []
 
-output_lines.extend(lines[:vertical_line_index])
-output_lines.append(" ".join(map(str, [round(angle, 2) for angle in exit_angles])))
-output_lines.append("\n")
-output_lines.append(lines[horizontal_angle_index])
+    output_lines.extend(lines[:vertical_line_index])
+    output_lines.append(" ".join(map(str, [round(angle, 2) for angle in exit_angles])))
+    output_lines.append("\n")
+    output_lines.append(lines[horizontal_angle_index])
 
-if num_horizontal_angles == 1:
-    output_lines.append(" ".join(map(str, exit_candelas)))
-else:
-    for sublist in exit_candelas:
-        output_lines.append(" ".join(map(str, sublist)))
-        output_lines.append("\n")
-
-
-output_lines.append("\n")
-output_file_path = os.path.join(output_dir, f"{input_filename}_output.ies")
-with open(output_file_path, 'w') as output_file:
-    output_file.write(''.join(output_lines))
+    if num_horizontal_angles == 1:
+        output_lines.append(" ".join(map(str, exit_candelas)))
+    else:
+        for sublist in exit_candelas:
+            output_lines.append(" ".join(map(str, sublist)))
+            output_lines.append("\n")
 
 
-########################################
-plot_lens(equation_inner_lens)
-plot_lens(equation_outer_lens)
-plot_initial_rays(initial_ray_equations)
-plot_middle_rays(middle_ray_equations)
-plot_exit_rays(exit_ray_equations)
+    output_lines.append("\n")
+    output_file_path = os.path.join(output_dir, f"{input_filename}_output.ies")
+    with open(output_file_path, 'w') as output_file:
+        output_file.write(''.join(output_lines))
+
+
+    ########################################
+    plot_lens(equation_inner_lens)
+    plot_lens(equation_outer_lens)
+    plot_initial_rays(initial_ray_equations)
+    plot_middle_rays(middle_ray_equations)
+    plot_exit_rays(exit_ray_equations)
 
 
 
-plt.xlim(-20, 20)
-plt.ylim(-40, 0)
-    
 
-    
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title('Lines at Different Angles')
-plt.axhline(0, color='black', linewidth=0.5)
-plt.axvline(0, color='black', linewidth=0.5)
-plt.grid(True, linestyle='--', alpha=0.7)
+    plt.xlim(-20, 20)
+    plt.ylim(-40, 0)
+        
 
-plt.show()
-
+        
+    plt.xlabel('')
+    plt.ylabel('')
+    plt.title('')
+    plt.axhline(0, color='black', linewidth=0.5)
+    plt.axvline(0, color='black', linewidth=0.5)
+    plt.grid(True, linestyle='--', alpha=0.7)
 
     
+    print("jjj")
+    for angle, candela in zip(initial_angles, initial_candelas_values):
+        initial_angle_candela_map[angle] = candela
+
+    print(initial_angle_candela_map)
+
+   
+
+
+    for angle, candela in zip(exit_angles, exit_candelas):
+        exit_angle_candela_map[angle] = candela
+
+    print(exit_angle_candela_map)
+
+
+    plt.show()
+
+
+        
