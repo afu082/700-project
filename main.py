@@ -90,12 +90,12 @@ def writeOutput(output_file_path, extracted_lines, info):
         
         
         # write each value of extracted_lines which is a numpy array, into the file separated by a space and to 3 decimal places
-
         f.write(' '.join(map(lambda x: "{:.3f}".format(x), extracted_lines)) + '\n')
 
 
 
 max_distance = 1000 
+
 
 
 def generate_angles(start, finish, step):
@@ -232,6 +232,7 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
     # [m, c, start, finish, diffract]
     # [a,b,c,d,e,f,g] where a,b,c,d,e are the coefficients of the equation ax^2 + bx + c = dy^2 + ey and f and g are the x ranges of the lens
     # new ray equations copy initial ray equations
+    
     middle_ray_equations = copy.deepcopy(initial_ray_equations)
     initial_angles_in_radians = [gradient_to_angle(equation[0]) for equation in initial_ray_equations]
     for i, angle in enumerate(initial_angles_in_radians):
@@ -253,9 +254,8 @@ def find_middle_ray_equations(initial_ray_equations, inner_lens_equation, outer_
             theta_3[i] = gradient_to_angle(tangent_at_x)
             
             # new gradient of ray in lens
-            # new_ray_equations[i][0] = angle_to_gradient(pi/2 - (-theta_3[i] + np.arcsin((refractive_index_air / refractive_index_lens) * np.cos(- theta_3[i] - (initial_angles_in_radians[i])))))
             middle_ray_equations[i][0] = angle_to_gradient(np.degrees(pi/2 - (np.arcsin((refractive_index_air / refractive_index_lens) * np.sin(pi/2 - theta_3[i] - initial_angles_in_radians[i])))+ theta_3[i]))
-            # add theta_3 to the equation to account for tangent
+
 
 
 
@@ -451,21 +451,13 @@ def find_x_intercepts_of_markers():
     x_points = 500 * np.cos(angles_rad)
     
     x_points = np.append(x_points, 500)
-    print(x_points[54::])
+    # print(x_points[54::])
     
 
     
     
     return x_points[54::]
 
-# def find_ies_output_intensity(x_intercepts, x_intercepts_markers):
-#     intensity = 0
-#     for i, x_intercept in enumerate(x_intercepts):
-#         if(x_intercept != 0):
-#             for j, x_intercept_marker in enumerate(x_intercepts_markers):
-#                 if(abs(x_intercept - x_intercept_marker) < 0.01):
-#                     intensity += 1
-#     return intensity/len(x_intercepts_markers)
 
 
 
@@ -538,18 +530,19 @@ if __name__ == "__main__":
     
     plot_lens(equation_inner_lens)
     plot_lens(equation_outer_lens)
+    
+    # refractive index of lens and air
+    # default is 1.5 and 1
+    refractive_index_lens = 1.5
+    refractive_index_air = 1
 
 
     # set number of rays here, default is per 0.001 degrees (180,000 rays)
     all_initial_ray_equations, initial_ray_equations = find_initial_ray_equations(generate_angles(0, 180, .001)[0], equation_inner_lens)
-
-    middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, 1.5, 1)
-
-    exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, 1.5, 1)
+    middle_ray_equations = find_middle_ray_equations(initial_ray_equations, equation_inner_lens, equation_outer_lens, refractive_index_lens, refractive_index_air)
+    exit_ray_equations = find_exit_ray_equations(middle_ray_equations, equation_outer_lens, refractive_index_lens, refractive_index_air)
     
-    # uncomment to ploy rays, DO NOT PLOT FOR LARGE NUMBER OF RAYS
-    # recommended number of rays is per 1 degree (180 rays)
-    
+    # uncomment lines below to ploy rays, DO NOT PLOT FOR LARGE NUMBER OF RAYS, the recommended number of rays is per 1 degree (180 rays)
     
     # plot_initial_rays(initial_ray_equations)
     # plot_middle_rays(middle_ray_equations)
@@ -565,7 +558,21 @@ if __name__ == "__main__":
 
 
     # uncomment to plot luminous intensity distribution curve
-    plot_intensity_per_marker(scaled_intensity)
+    # plot_intensity_per_marker(scaled_intensity)
+    
+    
+    # change view distance of plot with preset views below
+    plt.xlim(-35, 35)
+    plt.ylim(-50, 0)
+
+    # plt.xlim(-550, 550)
+    # plt.ylim(-700, 0)
+
+    # plt.xlim(-7, 7)
+    # plt.ylim(-10, 0)
+    
+    
+    
     
     # Change the input to the path of your .ies file
     input_file_path = "./TestFile1/template.ies"
@@ -590,35 +597,22 @@ if __name__ == "__main__":
     writeOutput(output_file_path, scaled_intensity, split_info)
 
 
-    # change view distance of plot with preset views below
-    
-    plt.xlim(-35, 35)
-    plt.ylim(-50, 0)
 
-    # plt.xlim(-550, 550)
-    # plt.ylim(-700, 0)
+    # circle = patches.Circle((0, 0), radius=500, fill=False, color='red', linestyle='--')
+    # plt.gca().add_patch(circle)
 
-    # plt.xlim(-7, 7)
-    # plt.ylim(-10, 0)
+    # angles_deg = np.arange(-2.5, 357.5, 5)
+    # angles_rad = np.deg2rad(angles_deg)
+    # x_points = 500 * np.cos(angles_rad)
+    # y_points = 500 * np.sin(angles_rad)
 
-
-
-
-    circle = patches.Circle((0, 0), radius=500, fill=False, color='red', linestyle='--')
-    plt.gca().add_patch(circle)
-
-    angles_deg = np.arange(-2.5, 357.5, 5)
-    angles_rad = np.deg2rad(angles_deg)
-    x_points = 500 * np.cos(angles_rad)
-    y_points = 500 * np.sin(angles_rad)
-
-    plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
+    # plt.scatter(x_points, y_points, color='blue', label='Circle Markers')
 
 
         
     plt.xlabel('x (units)')
     plt.ylabel('y (units)')
-    # plt.title('Light distribution curve points of no lens')
+    plt.title('Title')
     plt.axhline(0, color='black', linewidth=0.5)
     plt.axvline(0, color='black', linewidth=0.5)
     plt.grid(True, linestyle='--', alpha=0.7)
